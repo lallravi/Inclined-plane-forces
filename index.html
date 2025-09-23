@@ -13,81 +13,48 @@
             align-items: center; 
             height: 100vh; 
             margin: 0; 
-            background-color: #0a192f; /* Dark Navy Blue */
+            background-color: #0a192f;
             font-family: Arial, sans-serif; 
             text-align: center; 
-            color: #ccd6f6; /* Light Blue/Gray Text for general elements */
+            color: #ccd6f6;
         }
         canvas { 
-            border: 2px solid #64ffda; /* Accent Teal Border */
-            background-color: #112240; /* Lighter Navy Canvas */
+            border: 2px solid #64ffda;
+            background-color: #112240;
             width: 95vw;
             height: 70vh;
             max-width: 1400px;
         }
-        .controls { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 15px; 
-            margin-top: 15px; 
-        }
-        .slider-container { 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            font-size: 16px; 
-            min-width: 320px; 
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 15px; }
+        .slider-container { display: flex; align-items: center; gap: 10px; font-size: 16px; min-width: 320px; justify-content: center;}
+        #nextButton { padding: 12px 25px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; background-color: #112240; color: #64ffda; border: 1px solid #64ffda; transition: background-color 0.3s; }
+        #nextButton:hover { background-color: rgba(100, 255, 218, 0.1); }
+        #infoText { font-size: 18px; height: 30px; margin-top: 10px; font-weight: bold; color: #ccd6f6; }
+        
+        /* --- Styles for Logo and Title --- */
+        .title-container {
+            display: flex;
+            align-items: center;
             justify-content: center;
+            gap: 20px; /* Adjusts space between logo and text */
         }
-        #nextButton { 
-            padding: 12px 25px; 
-            font-size: 16px; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 8px; 
-            background-color: #112240; /* Match canvas background */
-            color: #64ffda; /* Accent Teal Text */
-            border: 1px solid #64ffda;
-            transition: background-color 0.3s; 
-        }
-        #nextButton:hover { 
-            background-color: rgba(100, 255, 218, 0.1);
-        }
-        #infoText { 
-            font-size: 18px; 
-            height: 30px; 
-            margin-top: 10px; 
-            font-weight: bold; 
-            color: #ccd6f6;
-        }
-       #logo {
-            /* REMOVE these lines:
-            position: absolute;
-            top: 20px;
-            left: 10px;
-            z-index: 1000;
-            */
-            width: 80px; /* You can still control the size here */
+        #logo {
+            width: 80px;
             height: auto;
         }
         h1 {
             color: #ccd6f6;
-            font-size: 3em; /* Made heading bigger */
+            font-size: 3em;
         }
     </style>
 </head>
 <body>
-.title-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px; /* Adjust space between logo and text */
-        }
+
     <div class="title-container">
-        <img id="logo" src="lr1.png" alt="My Logo">
+        <img id="logo" src="lr-1.png" alt="My Logo">
         <h1 id="mainTitle">Inclined Plane Forces</h1>
     </div>
+
     <canvas id="vectorCanvas"></canvas>
     
     <div class="controls">
@@ -234,8 +201,7 @@
         const fontSize = Math.max(12, canvas.width * 0.013);
         const smallFontSize = Math.max(11, canvas.width * 0.011);
 
-        // All text in the calculations panel is now pure white
-        drawText('--- Live Calculations ---', x, y, '#ffffff', `${fontSize}px`, 'bold'); y += lineHeight * 1.5;
+        drawText('--- Live Calculations ---', x, y, '#64ffda', `${fontSize}px`, 'bold'); y += lineHeight * 1.5;
         drawText('Perpendicular (⊥) Axis:', x, y, '#ffffff', `${smallFontSize}px`, 'bold'); y += lineHeight;
         drawText(`ΣF⊥ = FN - Fg·cos(θ) = 0`, x, y, '#ffffff', `${smallFontSize}px`); y += lineHeight;
         drawText(`FN = 100·cos(${angleDegrees}°) = ${vals.Fn.toFixed(1)} N`, x, y, '#ffffff', `${smallFontSize}px`); y += lineHeight * 1.5;
@@ -259,7 +225,7 @@
         }
     }
     
-    function drawText(text, x, y, color = '#ffffff', size = '16px', weight = 'normal') { ctx.fillStyle = color; const scaledSize = Math.max(12, canvas.width * parseFloat(size)/1000); ctx.font = `${weight} ${scaledSize}px Arial`; ctx.textAlign = 'left'; ctx.fillText(text, x, y); }
+    function drawText(text, x, y, color = '#eee', size = '16px', weight = 'normal') { ctx.fillStyle = color; const scaledSize = Math.max(12, canvas.width * parseFloat(size)/1000); ctx.font = `${weight} ${scaledSize}px Arial`; ctx.textAlign = 'left'; ctx.fillText(text, x, y); }
     function drawVector(startX, startY, endX, endY, color, width) { if(Math.abs(startX - endX) < 0.1 && Math.abs(startY - endY) < 0.1) return; ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke(); const vectorAngle = Math.atan2(endY - startY, endX - startX); const size = width * 2 + 4; ctx.save(); ctx.translate(endX, endY); ctx.rotate(vectorAngle); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-size, -size/2); ctx.lineTo(-size, size/2); ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.restore(); }
     function drawAngleArc(x, y, radius, angle, type) { if (angle <= 0) return; ctx.beginPath(); ctx.lineWidth = 2; const fontSize = Math.max(12, canvas.width * 0.015); if (type === 'incline_left') { ctx.strokeStyle = '#8892b0'; ctx.arc(x, y, radius, 0, -angle, true); drawText('θ', x + radius * 0.7, y - radius * 0.3, '#ccd6f6', `${fontSize}px`, 'italic'); } else if (type === 'forces') { const startAngle = Math.PI / 2; const endAngle = startAngle - angle; ctx.strokeStyle = '#64ffda'; ctx.arc(x, y, radius, startAngle, endAngle, true); const labelAngle = startAngle - angle/2; drawText('θ', x + (radius + 15) * Math.cos(labelAngle), y + (radius + 15) * Math.sin(labelAngle), '#64ffda', `${fontSize}px`, 'italic'); } ctx.stroke(); }
     function drawDottedLinesForInclinedPlane(FgTipX, FgTipY, perpEndX, perpEndY, paraEndX, paraEndY) { ctx.save(); ctx.setLineDash([5, 5]); ctx.strokeStyle = '#8892b0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(FgTipX, FgTipY); ctx.lineTo(perpEndX, perpEndY); ctx.stroke(); ctx.beginPath(); ctx.moveTo(FgTipX, FgTipY); ctx.lineTo(paraEndX, paraEndY); ctx.stroke(); ctx.restore(); }
