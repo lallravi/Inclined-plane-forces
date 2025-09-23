@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inclined Plane Forces Simulation</title>
+    <style>
+        /* --- Bluish Science Theme --- */
+        body { 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #0a192f; /* Dark Navy Blue */
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            color: #ccd6f6; /* Light Blue/Gray Text for general elements */
+        }
+        canvas { 
+            border: 2px solid #64ffda; /* Accent Teal Border */
+            background-color: #112240; /* Lighter Navy Canvas */
+            width: 95vw;
+            height: 70vh;
+            max-width: 1400px;
+        }
+        .controls { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 15px; 
+            margin-top: 15px; 
+        }
+        .slider-container { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-size: 16px; 
+            min-width: 320px; 
+            justify-content: center;
+        }
+        #nextButton { 
+            padding: 12px 25px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 8px; 
+            background-color: #112240; /* Match canvas background */
+            color: #64ffda; /* Accent Teal Text */
+            border: 1px solid #64ffda;
+            transition: background-color 0.3s; 
+        }
+        #nextButton:hover { 
+            background-color: rgba(100, 255, 218, 0.1);
+        }
+        #infoText { 
+            font-size: 18px; 
+            height: 30px; 
+            margin-top: 10px; 
+            font-weight: bold; 
+            color: #ccd6f6;
+        }
+        #logo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 80px;
+            height: auto;
+            z-index: 1000;
+        }
+        h1 {
+            color: #ccd6f6;
+            font-size: 3em; /* Made heading bigger */
+        }
+    </style>
+</head>
+<body>
+
+    <img id="logo" src="lr1.png" alt="My Logo">
+
+    <h1 id="mainTitle">Inclined Plane Forces</h1>
+    <canvas id="vectorCanvas"></canvas>
+    
+    <div class="controls">
+        <div class="slider-container">
+            <label for="angleSlider">Angle (θ):</label>
+            <input type="range" id="angleSlider" min="0" max="35" value="30" step="1">
+            <span id="angleValue">30°</span>
+        </div>
+        <div class="slider-container" id="staticFrictionContainer" style="display: none;">
+            <label for="frictionSlider">Static Friction (μs):</label>
+            <input type="range" id="frictionSlider" min="0" max="1.0" value="0.6" step="0.01">
+            <span id="frictionValue">0.60</span>
+        </div>
+        <div class="slider-container" id="kineticFrictionContainer" style="display: none;">
+            <label for="kineticFrictionSlider">Kinetic Friction (μk):</label>
+            <input type="range" id="kineticFrictionSlider" min="0" max="1.0" value="0.45" step="0.01">
+            <span id="kineticFrictionValue">0.45</span>
+        </div>
+        <button id="nextButton">Next Step</button>
+    </div>
+
+    <p id="infoText"></p>
+
+    <script>
+    const canvas = document.getElementById('vectorCanvas');
+    const ctx = canvas.getContext('2d');
+    const nextButton = document.getElementById('nextButton');
+    const infoText = document.getElementById('infoText');
+    const mainTitle = document.getElementById('mainTitle');
+    const angleSlider = document.getElementById('angleSlider');
+    const angleValue = document.getElementById('angleValue');
+    const frictionSlider = document.getElementById('frictionSlider');
+    const frictionValue = document.getElementById('frictionValue');
+    const kineticFrictionSlider = document.getElementById('kineticFrictionSlider');
+    const kineticFrictionValue = document.getElementById('kineticFrictionValue');
+    const staticFrictionContainer = document.getElementById('staticFrictionContainer');
+    const kineticFrictionContainer = document.getElementById('kineticFrictionContainer');
+
+    let step = 0;
+    let angleDegrees = 30;
+    let angleRadians = angleDegrees * Math.PI / 180;
+    let mu_s = 0.6;
+    let mu_k = 0.45;
+    let isAccelerating = false;
+    let acceleration = 0;
+    let dotPositionRatio = 0.3;
+    let dotVelocity = 0;
+    let lastTimestamp = 0;
+    
+    function drawInclinedPlaneResolution() {
+        const FgMagnitude = canvas.height * 0.22;
+        
+        const { dotX, dotY, planeLength } = drawPlaneAndDot(angleRadians);
+        const objectPosition = { x: dotX, y: dotY };
+        const startX = objectPosition.x, startY = objectPosition.y;
+        
+        if (step >= 0) {
+            const FgTipY = objectPosition.y + FgMagnitude;
+            drawVector(startX, startY, startX, FgTipY, '#ff6347', 4); // Tomato Red
+            drawText('Fg', startX + 10, FgTipY, '#ff6347', '18px');
+        }
+        
+        const FgParallelMag = FgMagnitude * Math.sin(angleRadians);
+        const FgPerpMag = FgMagnitude * Math.cos(angleRadians);
+        const normalForceMag = FgPerpMag;
+        let frictionForceMag = (isAccelerating) ? mu_k * normalForceMag : FgParallelMag;
+
+        const paraEndX = startX - FgParallelMag * Math.cos(angleRadians), paraEndY = startY + FgParallelMag * Math.sin(angleRadians);
+        const perpEndX = startX + FgPerpMag * Math.sin(angleRadians), perpEndY = startY + FgPerpMag * Math.cos(angleRadians);
+        const normalEndX = startX - normalForceMag * Math.sin(angleRadians), normalEndY = startY - normalForceMag * Math.cos(angleRadians);
+        const frictionEndX = startX + frictionForceMag * Math.cos(angleRadians), frictionEndY = startY - frictionForceMag * Math.sin(angleRadians);
+        
+        if (angleRadians > 0) {
+            if (step >= 1) { drawDottedLinesForInclinedPlane(objectPosition.x, startY + FgMagnitude, perpEndX, perpEndY, paraEndX, paraEndY); }
+            if (step >= 2) { 
+                drawVector(startX, startY, perpEndX, perpEndY, '#32cd32', 4); // Lime Green
+                drawText('Fg cos(θ)', perpEndX + 10, perpEndY + 15, '#32cd32', '16px');
+                drawAngleArc(startX, startY, canvas.width * 0.04, angleRadians, 'forces');
+            }
+            if (step >= 3) { 
+                drawVector(startX, startY, normalEndX, normalEndY, '#ffd700', 5); // Gold / Yellow
+                drawText('FN', normalEndX - 40, normalEndY - 10, '#ffd700', '18px');
+            }
+            if (step >= 4) { 
+                drawVector(startX, startY, paraEndX, paraEndY, '#1e90ff', 4); // Dodger Blue
+                drawText('Fg sin(θ)', paraEndX - canvas.width * 0.15, paraEndY + 10, '#1e90ff', '16px');
+            }
+            if (step >= 5) { 
+                drawVector(startX, startY, frictionEndX, frictionEndY, '#ff69b4', 5); // Hot Pink / Friction
+                drawText('Ff', frictionEndX + 10, frictionEndY - 10, '#ff69b4', '18px');
+            }
+            if (isAccelerating) {
+                const accelVectorLength = acceleration * (canvas.width * 0.03);
+                const accelEndX = startX - accelVectorLength * Math.cos(angleRadians);
+                const accelEndY = startY + accelVectorLength * Math.sin(angleRadians);
+                drawVector(startX, startY, accelEndX, accelEndY, '#ff8c00', 6); // Dark Orange
+                drawText('a', accelEndX - 30, accelEndY + 20, '#ff8c00', '18px');
+            }
+        } else {
+             if (step >= 3) {
+                drawVector(startX, startY, normalEndX, normalEndY, '#ffd700', 5);
+                drawText('FN', normalEndX - 30, normalEndY - 5, '#ffd700', '18px');
+             }
+        }
+        if (step >= 5) {
+            drawCalculations({ FgParallel: FgParallelMag, Fn: normalForceMag, mass: FgMagnitude / 9.81 });
+        }
+    }
+
+    function drawPlaneAndDot(currentAngle) {
+        const planeBaseY = canvas.height * 0.85;
+        const planeStartX = canvas.width * 0.05;
+        const planeEndX = canvas.width * 0.65;
+        const planeLength = planeEndX - planeStartX;
+        const planeHeight = planeLength * Math.tan(currentAngle);
+        
+        const cornerA = { x: planeStartX, y: planeBaseY }; 
+        const cornerB = { x: planeEndX, y: planeBaseY };   
+        const cornerC = { x: planeEndX, y: planeBaseY - planeHeight }; 
+        
+        ctx.beginPath();
+        ctx.moveTo(cornerA.x, cornerA.y); ctx.lineTo(cornerB.x, cornerB.y); ctx.lineTo(cornerC.x, cornerC.y);
+        ctx.closePath();
+        ctx.fillStyle = '#233554'; // Darker blue plane
+        ctx.fill();
+        ctx.strokeStyle = '#8892b0'; // Lighter border
+        ctx.lineWidth = 2; ctx.stroke();
+        if (currentAngle > 0) { drawAngleArc(cornerA.x, cornerA.y, canvas.width * 0.1, currentAngle, 'incline_left'); }
+        
+        const hypotenuseLength = Math.hypot(cornerA.x - cornerC.x, cornerA.y - cornerC.y);
+        const dotX = cornerC.x + (cornerA.x - cornerC.x) * dotPositionRatio;
+        const dotY = cornerC.y + (cornerA.y - cornerC.y) * dotPositionRatio;
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, canvas.width * 0.01, 0, 2 * Math.PI); 
+        ctx.fillStyle = '#ccd6f6'; // Light blue dot
+        ctx.fill();
+        return { dotX: dotX, dotY: dotY, planeLength: hypotenuseLength };
+    }
+    
+    function drawCalculations(vals) {
+        let x = canvas.width * 0.7;
+        let y = canvas.height * 0.1;
+        const lineHeight = canvas.height * 0.045;
+        const fontSize = Math.max(12, canvas.width * 0.013);
+        const smallFontSize = Math.max(11, canvas.width * 0.011);
+
+        // All text in the calculations panel is now pure white
+        drawText('--- Live Calculations ---', x, y, '#ffffff', `${fontSize}px`, 'bold'); y += lineHeight * 1.5;
+        drawText('Perpendicular (⊥) Axis:', x, y, '#ffffff', `${smallFontSize}px`, 'bold'); y += lineHeight;
+        drawText(`ΣF⊥ = FN - Fg·cos(θ) = 0`, x, y, '#ffffff', `${smallFontSize}px`); y += lineHeight;
+        drawText(`FN = 100·cos(${angleDegrees}°) = ${vals.Fn.toFixed(1)} N`, x, y, '#ffffff', `${smallFontSize}px`); y += lineHeight * 1.5;
+        drawText('Parallel (∥) Axis:', x, y, '#ffffff', `${smallFontSize}px`, 'bold'); y += lineHeight;
+        drawText(`F∥ = 100·sin(${angleDegrees}°) = ${vals.FgParallel.toFixed(1)} N`, x, y, '#ffffff', `${smallFontSize}px`); y += lineHeight;
+        const maxStaticFriction = mu_s * vals.Fn;
+        drawText(`Ff(max) = μs·FN = ${mu_s.toFixed(2)}·${vals.Fn.toFixed(1)} = ${maxStaticFriction.toFixed(1)} N`, x, y, '#ffffff', `${smallFontSize}px`); y += lineHeight * 1.5;
+
+        if (isAccelerating) {
+            drawText(`${vals.FgParallel.toFixed(1)}N > ${maxStaticFriction.toFixed(1)}N => ACCELERATING`, x, y, '#ff6347', `${fontSize}px`, 'bold'); y += lineHeight * 1.2;
+            drawText('ΣF∥ = F∥ - Ff(k) = m·a', x, y, '#ffffff', `${smallFontSize}px`); y += lineHeight;
+            const kineticFrictionForce = mu_k * vals.Fn;
+            const netForce = vals.FgParallel - kineticFrictionForce;
+            drawText(`Ff(k) = μk·FN = ${mu_k.toFixed(2)}·${vals.Fn.toFixed(1)} = ${kineticFrictionForce.toFixed(1)} N`, x, y, '#ffffff', `${smallFontSize}px`); y += lineHeight;
+            drawText(`F(net) = ${vals.FgParallel.toFixed(1)} - ${kineticFrictionForce.toFixed(1)} = ${netForce.toFixed(1)} N`, x, y, '#ffffff', `${smallFontSize}px`); y += lineHeight;
+            drawText(`a = F(net) / m = ${acceleration.toFixed(2)} m/s²`, x, y, '#ffffff', `${smallFontSize}px`, 'bold');
+        } else {
+            drawText(`${vals.FgParallel.toFixed(1)}N <= ${maxStaticFriction.toFixed(1)}N => STATIC`, x, y, '#32cd32', `${fontSize}px`, 'bold');
+            y += lineHeight; 
+            drawText(`ΣF∥ = F∥ - Ff(s) = 0`, x, y, '#ffffff', `${smallFontSize}px`);
+        }
+    }
+    
+    function drawText(text, x, y, color = '#ffffff', size = '16px', weight = 'normal') { ctx.fillStyle = color; const scaledSize = Math.max(12, canvas.width * parseFloat(size)/1000); ctx.font = `${weight} ${scaledSize}px Arial`; ctx.textAlign = 'left'; ctx.fillText(text, x, y); }
+    function drawVector(startX, startY, endX, endY, color, width) { if(Math.abs(startX - endX) < 0.1 && Math.abs(startY - endY) < 0.1) return; ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.moveTo(startX, startY); ctx.lineTo(endX, endY); ctx.stroke(); const vectorAngle = Math.atan2(endY - startY, endX - startX); const size = width * 2 + 4; ctx.save(); ctx.translate(endX, endY); ctx.rotate(vectorAngle); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-size, -size/2); ctx.lineTo(-size, size/2); ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.restore(); }
+    function drawAngleArc(x, y, radius, angle, type) { if (angle <= 0) return; ctx.beginPath(); ctx.lineWidth = 2; const fontSize = Math.max(12, canvas.width * 0.015); if (type === 'incline_left') { ctx.strokeStyle = '#8892b0'; ctx.arc(x, y, radius, 0, -angle, true); drawText('θ', x + radius * 0.7, y - radius * 0.3, '#ccd6f6', `${fontSize}px`, 'italic'); } else if (type === 'forces') { const startAngle = Math.PI / 2; const endAngle = startAngle - angle; ctx.strokeStyle = '#64ffda'; ctx.arc(x, y, radius, startAngle, endAngle, true); const labelAngle = startAngle - angle/2; drawText('θ', x + (radius + 15) * Math.cos(labelAngle), y + (radius + 15) * Math.sin(labelAngle), '#64ffda', `${fontSize}px`, 'italic'); } ctx.stroke(); }
+    function drawDottedLinesForInclinedPlane(FgTipX, FgTipY, perpEndX, perpEndY, paraEndX, paraEndY) { ctx.save(); ctx.setLineDash([5, 5]); ctx.strokeStyle = '#8892b0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(FgTipX, FgTipY); ctx.lineTo(perpEndX, perpEndY); ctx.stroke(); ctx.beginPath(); ctx.moveTo(FgTipX, FgTipY); ctx.lineTo(paraEndX, paraEndY); ctx.stroke(); ctx.restore(); }
+    
+    function updatePhysicsState() { if (step < 5) { isAccelerating = false; acceleration = 0; return; } const FgMagnitude = canvas.height * 0.22, mass = FgMagnitude / 9.81; const FgParallelMag = FgMagnitude * Math.sin(angleRadians); const normalForceMag = FgMagnitude * Math.cos(angleRadians); const maxStaticFriction = mu_s * normalForceMag; if (FgParallelMag > maxStaticFriction && FgParallelMag > 0.01) { if (!isAccelerating) { isAccelerating = true; } const kineticFrictionForce = mu_k * normalForceMag; const netForce = FgParallelMag - kineticFrictionForce; acceleration = (netForce > 0) ? netForce / mass : 0; if (acceleration <= 0) { isAccelerating = false; dotVelocity = 0; } } else { if (isAccelerating) { dotVelocity = 0; } isAccelerating = false; acceleration = 0; } }
+    function updateLabelsAndText() { const showSliders = step >= 5; staticFrictionContainer.style.display = showSliders ? 'flex' : 'none'; kineticFrictionContainer.style.display = showSliders ? 'flex' : 'none'; switch (step) { case 0: infoText.textContent = `The plane is tilted by θ = ${angleDegrees}°.`; nextButton.textContent = 'Show Parallelogram'; break; case 1: infoText.textContent = 'Resolve Fg into components.'; nextButton.textContent = 'Show Perpendicular Component'; break; case 2: infoText.textContent = 'The perpendicular component, Fg cos(θ).'; nextButton.textContent = 'Show Normal Force'; break; case 3: infoText.textContent = 'The Normal Force (FN).'; nextButton.textContent = 'Show Parallel & Friction Forces'; break; case 4: infoText.textContent = 'The parallel and opposing friction forces.'; nextButton.textContent = 'Activate Live Simulation'; break; case 5: nextButton.textContent = 'Reset Simulation'; updatePhysicsState(); if (isAccelerating) { infoText.innerHTML = `ACCELERATING! (a = ${acceleration.toFixed(2)} m/s²)`; infoText.style.color = '#ff6347'; } else { infoText.textContent = 'STATIC. Friction holds the object.'; infoText.style.color = '#32cd32'; } break; default: step = 0; isAccelerating = false; dotPositionRatio = 0.3; dotVelocity = 0; infoText.style.color = '#ccd6f6'; infoText.textContent = `The plane is tilted by θ = ${angleDegrees}°.`; nextButton.textContent = 'Show Parallelogram'; break; } }
+    
+    function animationLoop(timestamp) { if (lastTimestamp === 0) { lastTimestamp = timestamp; } const dt = (timestamp - lastTimestamp) / 1000; if (step >= 5 && isAccelerating) { const { planeLength } = drawPlaneAndDot(angleRadians); const visualAcceleration = acceleration * (canvas.width * 0.05); dotVelocity += visualAcceleration * dt; const distanceMoved = dotVelocity * dt; dotPositionRatio += distanceMoved / planeLength; if (dotPositionRatio >= 1) { dotPositionRatio = 1; isAccelerating = false; dotVelocity = 0; updatePhysicsState(); } redrawCanvas(); } lastTimestamp = timestamp; requestAnimationFrame(animationLoop); }
+    
+    function setupCanvas() { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; redrawCanvas(); }
+    function redrawCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); drawInclinedPlaneResolution(); }
+    
+    window.addEventListener('resize', setupCanvas);
+    angleSlider.addEventListener('input', (event) => { angleDegrees = parseFloat(event.target.value); angleRadians = angleDegrees * Math.PI / 180; updatePhysicsState(); redrawCanvas(); angleValue.textContent = `${angleDegrees}°`; });
+    frictionSlider.addEventListener('input', (event) => { mu_s = parseFloat(event.target.value); frictionValue.textContent = mu_s.toFixed(2); updatePhysicsState(); redrawCanvas(); });
+    kineticFrictionSlider.addEventListener('input', (event) => { mu_k = parseFloat(event.target.value); kineticFrictionValue.textContent = mu_k.toFixed(2); updatePhysicsState(); redrawCanvas(); });
+    nextButton.addEventListener('click', () => { step++; updatePhysicsState(); updateLabelsAndText(); redrawCanvas(); });
+    
+    setupCanvas();
+    updateLabelsAndText();
+    requestAnimationFrame(animationLoop);
+    </script>
+</body>
+</html>
