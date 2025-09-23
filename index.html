@@ -61,13 +61,15 @@
             font-weight: bold; 
             color: #ccd6f6;
         }
-        #logo {
+       #logo {
+            /* REMOVE these lines:
             position: absolute;
             top: 20px;
             left: 10px;
-            width: 120px;
-            height: auto;
             z-index: 1000;
+            */
+            width: 80px; /* You can still control the size here */
+            height: auto;
         }
         h1 {
             color: #ccd6f6;
@@ -76,10 +78,16 @@
     </style>
 </head>
 <body>
-
-    <img id="logo" src="lr-1.png" alt="My Logo">
-
-    <h1 id="mainTitle">Inclined Plane Forces</h1>
+.title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px; /* Adjust space between logo and text */
+        }
+    <div class="title-container">
+        <img id="logo" src="lr1.png" alt="My Logo">
+        <h1 id="mainTitle">Inclined Plane Forces</h1>
+    </div>
     <canvas id="vectorCanvas"></canvas>
     
     <div class="controls">
