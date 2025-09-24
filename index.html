@@ -34,7 +34,6 @@
         #nextButton:hover { background-color: rgba(100, 255, 218, 0.1); }
         #infoText { font-size: 18px; height: 30px; font-weight: bold; color: #e0e0e0; }
         
-        /* --- Styles for Logo and Title --- */
         .title-container {
             display: flex;
             align-items: center;
@@ -42,7 +41,7 @@
             gap: 20px;
         }
         #logo {
-            width: 100px; /* Made logo bigger */
+            width: 100px; 
             height: auto;
         }
         h1 {
@@ -50,6 +49,48 @@
             font-size: 3em;
             margin: 0;
         }
+
+        /* --- Custom Slider Styles --- */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 160px; 
+            height: 20px;
+            background: transparent;
+            cursor: pointer;
+        }
+        /* Track for WebKit (Chrome, Safari, Edge) */
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 8px;
+            background: #444;
+            border-radius: 4px;
+        }
+        /* Thumb for WebKit */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -6px;
+            height: 20px;
+            width: 20px;
+            background: #64ffda;
+            border-radius: 50%;
+            border: 2px solid #1e1e1e;
+        }
+        /* Track for Firefox */
+        input[type="range"]::-moz-range-track {
+            height: 8px;
+            background: #444;
+            border-radius: 4px;
+        }
+        /* Thumb for Firefox */
+        input[type="range"]::-moz-range-thumb {
+            height: 20px;
+            width: 20px;
+            background: #64ffda;
+            border-radius: 50%;
+            border: 2px solid #1e1e1e;
+        }
+
     </style>
 </head>
 <body>
