@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inclined Plane Forces Simulation</title>
     <style>
+
+        /* --- CODE #1 TO PREVENT COPYING --- */
+body {
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* IE10+/Edge */
+    user-select: none;         /* Standard */
+}
         body { 
             display: grid; 
             place-items: center;
@@ -126,6 +134,18 @@
     </main>
 
     <script>
+
+        // --- CODE #2 TO PREVENT COPYING ---
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+});
+document.onkeydown = function(e) {
+    if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) || (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) || (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0))) {
+        e.preventDefault();
+        return false;
+    }
+};
+// --- END OF SECOND CODE ---
     const canvas = document.getElementById('vectorCanvas');
     const ctx = canvas.getContext('2d');
     const nextButton = document.getElementById('nextButton');
